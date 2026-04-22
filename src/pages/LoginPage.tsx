@@ -42,6 +42,11 @@ export default function LoginPage() {
       navigate(redirectPath, { replace: true });
     } catch (error) {
       if (isAxiosError(error)) {
+        if (!error.response) {
+          setErrorMessage("Nao foi possivel conectar ao servidor. Verifique se a API permite acesso deste dominio (CORS).");
+          return;
+        }
+
         if (error.response?.status === 401) {
           setErrorMessage("E-mail ou senha inválidos.");
         } else {

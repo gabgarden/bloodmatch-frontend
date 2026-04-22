@@ -33,6 +33,10 @@ function extractApiErrorMessage(error: unknown): string {
     return error instanceof Error ? error.message : "Erro ao registrar. Verifique os dados e tente novamente.";
   }
 
+  if (!error.response) {
+    return "Nao foi possivel conectar ao servidor. Verifique se a API permite acesso deste dominio (CORS).";
+  }
+
   const data = error.response?.data;
 
   if (typeof data === "string" && data.trim().length > 0) {
