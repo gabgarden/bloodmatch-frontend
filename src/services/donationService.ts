@@ -1,4 +1,5 @@
 import { api } from "../api/client";
+import { API_BASE_URL } from "../config/api";
 
 type DonationHistoryApiItem = {
   donationId: string;
@@ -29,3 +30,9 @@ export async function fetchDonorDonationHistory(donorId: string): Promise<Donati
 
   return items.map(normalizeDonation);
 }
+
+export function buildDonationDetailsApiUrl(donationId: string): string {
+  return `${API_BASE_URL}/donations/${donationId}`;
+}
+
+export const externalDonationCreatePath = "/donations/external/new";

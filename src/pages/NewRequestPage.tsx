@@ -3,17 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
 import { DonorDashboardSidebar } from "../components/dashboard/DashboardSidebar";
 import { DonorDashboardTopbar } from "../components/dashboard/DashboardTopbar";
-import { InlineAlert } from "../components/ui";
+import { FullPageLoading, InlineAlert } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import { CreateRequestForm } from "../components/requests/CreateRequestForm";
 import { RequestPreview } from "../components/requests/RequestPreview";
 import { RequestGuide } from "../components/requests/RequestGuide";
 import axios from "axios";
 import { API_BASE_URL } from "../config/api";
+import { AccessDenied } from "../components/AccessDenied";
+import { useRoleResolution } from "../hooks/useRoleResolution";
+import { hasAdminRole, hasRequesterRole } from "../routes/roleRouting";
 
 export default function NewRequestPage() {
   const navigate = useNavigate();
-  const { partyId, logout } = useAuth();
+  const { partyId, roles, logout } = useAuth();
+
+  const isResolvingRoles = useRoleResolution(roles);
+  const canAccessRequesterArea = hasRequesterRole(roles);
+  const canAccessAdminArea = hasAdminRole(roles);
 
   const [bloodType, setBloodType] = useState("");
   const [quantity, setQuantity] = useState(0);
@@ -25,6 +32,20 @@ export default function NewRequestPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  if (isResolvingRoles) {
+    return <FullPageLoading message="Carregando permissões..." />;
+  }
+
+  if (!canAccessRequesterArea && !canAccessAdminArea) {
+    return (
+      <main className="min-h-screen bg-surface p-6">
+        <div className="mx-auto max-w-3xl">
+          <AccessDenied title="Área de Nova Requisição indisponível" />
+        </div>
+      </main>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

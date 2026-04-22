@@ -1,25 +1,16 @@
 import type { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { FullPageLoading } from "../components/ui";
+import { useRoleResolution } from "../hooks/useRoleResolution";
 import { resolvePostLoginPath } from "./roleRouting";
-
-function AuthLoading() {
-  return (
-    <main className="min-h-screen grid place-items-center bg-surface px-6">
-      <div className="text-center">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
-        <p className="mt-3 text-sm text-gray-600">Validando sessão...</p>
-      </div>
-    </main>
-  );
-}
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return <AuthLoading />;
+    return <FullPageLoading message="Validando sessão..." />;
   }
 
   if (!isAuthenticated) {
@@ -31,9 +22,14 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
 export function PublicOnlyRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading, roles } = useAuth();
+  const isResolvingRoles = useRoleResolution(roles);
 
   if (isLoading) {
-    return <AuthLoading />;
+    return <FullPageLoading message="Validando sessão..." />;
+  }
+
+  if (isAuthenticated && isResolvingRoles) {
+    return <FullPageLoading message="Carregando permissões..." />;
   }
 
   if (isAuthenticated) {
@@ -45,6 +41,11 @@ export function PublicOnlyRoute({ children }: { children: ReactNode }) {
 
 export function RoleBasedHomeRedirect() {
   const { roles } = useAuth();
+  const isResolvingRoles = useRoleResolution(roles);
+
+  if (isResolvingRoles) {
+    return <FullPageLoading message="Carregando permissões..." />;
+  }
 
   return <Navigate to={resolvePostLoginPath(roles)} replace />;
 }

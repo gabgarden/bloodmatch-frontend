@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 
 export default function RegisterPage() {
   return (
-    <div className="bg-surface text-on-surface h-[100dvh] overflow-hidden">
+    <div className="bg-surface text-on-surface min-h-[100dvh]">
 
       {/* Header */}
-      <header className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 h-16 bg-[#f9f9fb] backdrop-blur-md bg-opacity-80">
+      <header className="sticky top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 h-16 bg-[#f9f9fb] backdrop-blur-md bg-opacity-80">
         <div className="text-2xl font-extrabold text-primary headline-font tracking-tight">
           Bloodmatch
         </div>
@@ -20,7 +20,7 @@ export default function RegisterPage() {
       </header>
 
       {/* Main */}
-      <main className="mx-auto mt-16 flex h-[calc(100dvh-4rem)] w-full max-w-6xl items-center gap-6 px-4 py-3 lg:justify-between lg:py-4">
+      <main className="mx-auto w-full max-w-6xl items-start gap-6 px-4 py-4 lg:flex lg:min-h-[calc(100dvh-4rem)] lg:items-center lg:justify-between lg:py-6">
 
         {/* LEFT SIDE */}
         <div className="hidden flex-1 lg:block">

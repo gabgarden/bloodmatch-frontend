@@ -11,6 +11,7 @@ import { registerOrganization, registerPerson } from "../services/partyService";
 import type { ApiResponse } from "../types/party";
 import { useAuth } from "../context/AuthContext";
 import { AppButton, InlineAlert } from "./ui";
+import { resolvePostLoginPath } from "../routes/roleRouting";
 
 type RegisterFormState = {
   name: string;
@@ -152,17 +153,19 @@ export default function RegisterForm() {
       await login({ email: normalizedEmail, password: form.password });
 
       const createdPartyId = getCreatedPartyId(response);
-      if (type === "person") {
-        if (!createdPartyId) {
-          setErrorMessage("Cadastro criado, mas não foi possível identificar o partyId para criar os perfis iniciais.");
-          return;
-        }
-
-        await createSelectedProfiles(createdPartyId);
-        await login({ email: normalizedEmail, password: form.password });
+      if (!createdPartyId) {
+        setErrorMessage("Cadastro criado, mas não foi possível identificar o partyId para criar os perfis iniciais.");
+        return;
       }
 
-      navigate("/dashboard", { replace: true });
+      if (type === "person") {
+        await createSelectedProfiles(createdPartyId);
+      } else {
+        await createRequesterProfile(createdPartyId);
+      }
+
+      const refreshedSession = await login({ email: normalizedEmail, password: form.password });
+      navigate(resolvePostLoginPath(refreshedSession.roles), { replace: true });
       return;
     } catch (error) {
       setErrorMessage(extractApiErrorMessage(error));

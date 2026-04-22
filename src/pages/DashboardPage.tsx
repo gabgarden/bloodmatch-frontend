@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { RecommendationCard } from "../components/dashboard/RecommendationCard";
 import { useAuth } from "../context/AuthContext";
 import { DonorDashboardSidebar } from "../components/dashboard/DashboardSidebar";
@@ -8,16 +8,25 @@ import { DonorHeroSection } from "../components/dashboard/DonorHeroSection";
 import { LastDonationCard } from "../components/dashboard/LastDonationCard";
 import { DonationHistory } from "../components/dashboard/DonationHistory";
 import { useDonorDashboard } from "../hooks/useDonorDashboard";
-import { AppCard, InlineAlert } from "../components/ui";
+import { AppCard, FullPageLoading, InlineAlert } from "../components/ui";
+import { useRoleResolution } from "../hooks/useRoleResolution";
+import { hasAdminRole, hasDonorRole, hasRequesterRole } from "../routes/roleRouting";
+import { buildDonationDetailsApiUrl, externalDonationCreatePath } from "../services/donationService";
 
 export default function DonorDashboardPage() {
+  const navigate = useNavigate();
   const { roles, partyId, logout } = useAuth();
 
-  const roleSet = useMemo(() => new Set(roles), [roles]);
-  const hasDonorRole = roleSet.has("DONOR");
-  const hasRequesterRole = roleSet.has("REQUESTER");
-  const hasAdminRole = roleSet.has("SYSTEM_ADMIN");
-  const isRequesterOnly = hasRequesterRole && !hasDonorRole && !hasAdminRole;
+  const normalizedRoles = useMemo(() => roles, [roles]);
+  const isResolvingRoles = useRoleResolution(normalizedRoles);
+  const canAccessDonorDashboard = hasDonorRole(normalizedRoles);
+  const canAccessRequesterArea = hasRequesterRole(normalizedRoles);
+  const canAccessAdminArea = hasAdminRole(normalizedRoles);
+  const isRequesterOnly = canAccessRequesterArea && !canAccessDonorDashboard && !canAccessAdminArea;
+
+  if (isResolvingRoles) {
+    return <FullPageLoading message="Carregando permissões..." />;
+  }
 
   // Main feature state is centralized in one hook to keep page focused on layout.
   const {
@@ -31,13 +40,30 @@ export default function DonorDashboardPage() {
     livesImpacted,
     lastDonationDate,
     lastDonationHospitalName,
-    hasCertificate,
-    reportUrl,
+    lastDonationId,
     donationHistory,
     isLoadingDonationHistory,
     donationHistoryError,
     acceptDonation,
-  } = useDonorDashboard({ partyId, hasDonorRole });
+  } = useDonorDashboard({ partyId, hasDonorRole: canAccessDonorDashboard });
+
+  const urgentRecommendations = useMemo(
+    () => recommendations.filter((recommendation) => recommendation.urgency === "CRITICAL"),
+    [recommendations],
+  );
+
+  function handleOpenDonationDetails() {
+    if (!lastDonationId) {
+      return;
+    }
+
+    const detailsUrl = buildDonationDetailsApiUrl(lastDonationId);
+    window.open(detailsUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function handleCreateExternalDonation() {
+    navigate(externalDonationCreatePath);
+  }
 
   if (isRequesterOnly) {
     return <Navigate to="/requests" replace />;
@@ -54,16 +80,7 @@ export default function DonorDashboardPage() {
 
           {errorMessage && <InlineAlert tone="error" message={errorMessage} />}
 
-          {roles.length === 0 && (
-            <AppCard className="p-6 lg:p-8">
-              <h2 className="headline-font text-2xl font-extrabold">Nenhuma funcionalidade disponível</h2>
-              <p className="mt-2 text-sm text-gray-600">
-                Este usuário ainda nao possui perfis ativos para acessar recursos do dashboard de doador.
-              </p>
-            </AppCard>
-          )}
-
-          {hasDonorRole && (
+          {canAccessDonorDashboard && (
             <>
               <section className="grid grid-cols-12 gap-6">
                 <DonorHeroSection
@@ -75,26 +92,27 @@ export default function DonorDashboardPage() {
                 <LastDonationCard
                   lastDonationDate={lastDonationDate}
                   lastDonationHospitalName={lastDonationHospitalName}
-                  hasCertificate={hasCertificate}
-                  reportUrl={reportUrl}
+                  hasDonation={!!lastDonationId}
+                  onOpenDonationDetails={handleOpenDonationDetails}
+                  onCreateExternalDonation={handleCreateExternalDonation}
                 />
               </section>
 
               <section className="space-y-5">
                 <div className="flex items-end justify-between">
                   <div>
-                    <h2 className="headline-font text-2xl font-extrabold tracking-tight">Recomendacoes Urgentes</h2>
-                    <p className="text-sm text-gray-600">Requisicoes compativeis com {donorBloodType}</p>
+                    <h2 className="headline-font text-2xl font-extrabold tracking-tight">Recomendações Urgentes</h2>
+                    <p className="text-sm text-gray-600">Requisições compatíveis com {donorBloodType}</p>
                   </div>
-                  <button type="button" className="text-[#ae131a] font-bold flex items-center gap-1 hover:underline">
+                  <Link to="/dashboard/recommendations" className="text-[#ae131a] font-bold flex items-center gap-1 hover:underline">
                     Ver todas <span className="material-symbols-outlined">chevron_right</span>
-                  </button>
+                  </Link>
                 </div>
 
                 {isLoadingRecommendations && <p className="text-sm text-gray-600">Carregando recomendações...</p>}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {recommendations.map((recommendation) => (
+                  {urgentRecommendations.map((recommendation) => (
                     <RecommendationCard
                       key={recommendation.id}
                       id={recommendation.id}
@@ -106,9 +124,9 @@ export default function DonorDashboardPage() {
                     />
                   ))}
 
-                  {!isLoadingRecommendations && recommendations.length === 0 && (
+                  {!isLoadingRecommendations && urgentRecommendations.length === 0 && (
                     <div className="rounded-[2rem] bg-[#f3f3f5] p-6 text-sm text-gray-600 col-span-1 md:col-span-2 lg:col-span-3">
-                      Nenhuma recomendação disponível no momento.
+                      Nenhuma recomendação urgente disponível no momento.
                     </div>
                   )}
                 </div>
@@ -124,7 +142,7 @@ export default function DonorDashboardPage() {
 
          
 
-          {!hasDonorRole && hasRequesterRole && !hasAdminRole && (
+          {!canAccessDonorDashboard && canAccessRequesterArea && !canAccessAdminArea && (
             <AppCard className="p-6">
               <h3 className="headline-font text-xl font-bold">Funcionalidades de requisitante</h3>
               <p className="mt-2 text-sm text-gray-600">

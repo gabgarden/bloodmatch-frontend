@@ -2,9 +2,11 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { DonorDashboardSidebar } from "../components/dashboard/DashboardSidebar";
 import { DonorDashboardTopbar } from "../components/dashboard/DashboardTopbar";
-import { AppButton, AppCard } from "../components/ui";
+import { AppButton, AppCard, FullPageLoading } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import { AccessDenied } from "../components/AccessDenied";
+import { useRoleResolution } from "../hooks/useRoleResolution";
+import { hasAdminRole, hasRequesterRole } from "../routes/roleRouting";
 
 type RequestUrgency = "Crítica" | "Média" | "Baixa";
 
@@ -109,11 +111,16 @@ export default function RequestsPage() {
   const { roles, logout } = useAuth();
   const [selectedBloodType, setSelectedBloodType] = useState("Todos");
 
-  const roleSet = useMemo(() => new Set(roles), [roles]);
-  const hasRequesterRole = roleSet.has("REQUESTER");
-  const hasAdminRole = roleSet.has("SYSTEM_ADMIN");
+  const normalizedRoles = useMemo(() => roles, [roles]);
+  const isResolvingRoles = useRoleResolution(normalizedRoles);
+  const canAccessRequesterArea = hasRequesterRole(normalizedRoles);
+  const canAccessAdminArea = hasAdminRole(normalizedRoles);
 
-  if (!hasRequesterRole && !hasAdminRole) {
+  if (isResolvingRoles) {
+    return <FullPageLoading message="Carregando permissões..." />;
+  }
+
+  if (!canAccessRequesterArea && !canAccessAdminArea) {
     return (
       <main className="min-h-screen bg-surface p-6">
         <div className="mx-auto max-w-3xl">

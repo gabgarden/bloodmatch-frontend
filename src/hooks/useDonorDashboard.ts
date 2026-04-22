@@ -72,6 +72,7 @@ export function useDonorDashboard({ partyId, hasDonorRole }: DonorDashboardParam
   const [hasCertificate, setHasCertificate] = useState(false);
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const [resolvedDonorId, setResolvedDonorId] = useState<string | null>(null);
+  const [lastDonationId, setLastDonationId] = useState<string | null>(null);
   const [donationHistory, setDonationHistory] = useState<DonationHistoryEntry[]>([]);
   const [isLoadingDonationHistory, setIsLoadingDonationHistory] = useState(false);
   const [donationHistoryError, setDonationHistoryError] = useState<string | null>(null);
@@ -110,6 +111,7 @@ export function useDonorDashboard({ partyId, hasDonorRole }: DonorDashboardParam
   useEffect(() => {
     if (!hasDonorRole || !resolvedDonorId) {
       setDonationHistory([]);
+      setLastDonationId(null);
       return;
     }
 
@@ -122,7 +124,9 @@ export function useDonorDashboard({ partyId, hasDonorRole }: DonorDashboardParam
       try {
         const history = await fetchDonorDonationHistory(donorId);
         setDonationHistory(history);
+        setLastDonationId(history[0]?.id ?? null);
       } catch (error) {
+        setLastDonationId(null);
         if (isAxiosError(error) && error.response?.status === 403) {
           setDonationHistoryError("Voce nao tem permissao para ver o historico de doacoes.");
         } else {
@@ -195,6 +199,7 @@ export function useDonorDashboard({ partyId, hasDonorRole }: DonorDashboardParam
     lastDonationHospitalName,
     hasCertificate,
     reportUrl,
+    lastDonationId,
     donationHistory,
     isLoadingDonationHistory,
     donationHistoryError,

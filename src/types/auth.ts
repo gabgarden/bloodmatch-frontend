@@ -1,4 +1,4 @@
-export type UserRole = "DONOR" | "REQUESTER" | "SYSTEM_ADMIN";
+export type UserRole = "DONOR" | "REQUESTER" | "ORGANIZATION" | "SYSTEM_ADMIN";
 
 export type LoginResponse = {
   tokenType: string;

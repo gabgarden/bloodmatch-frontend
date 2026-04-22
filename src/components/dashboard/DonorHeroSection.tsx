@@ -6,6 +6,8 @@ type DonorHeroSectionProps = {
 };
 
 export function DonorHeroSection({ userName, bloodType, daysRemaining}: DonorHeroSectionProps) {
+  const canDonateNow = daysRemaining <= 0;
+
   return (
     <section className="col-span-12 lg:col-span-8 bg-white rounded-[2rem] p-6 lg:p-8 flex flex-col md:flex-row gap-6 items-center relative overflow-hidden">
       <div className="absolute -right-12 -top-12 w-64 h-64 bg-red-100 opacity-60 rounded-full" />
@@ -25,8 +27,17 @@ export function DonorHeroSection({ userName, bloodType, daysRemaining}: DonorHer
           </div>
 
           <div className="rounded-2xl bg-[#f3f3f5] px-5 py-3 text-center">
-            <p className="headline-font text-3xl font-black text-gray-900">{daysRemaining}</p>
-            <p className="text-[10px] font-bold uppercase text-gray-500">Dias Restantes</p>
+            {canDonateNow ? (
+              <>
+                <p className="headline-font text-xl font-black text-[#ae131a]">Já pode doar.</p>
+                <p className="text-[10px] font-bold uppercase text-gray-500">Disponível agora</p>
+              </>
+            ) : (
+              <>
+                <p className="headline-font text-3xl font-black text-gray-900">{daysRemaining}</p>
+                <p className="text-[10px] font-bold uppercase text-gray-500">Dias Restantes</p>
+              </>
+            )}
           </div>
         </div>
       </div>

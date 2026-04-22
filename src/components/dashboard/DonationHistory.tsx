@@ -61,10 +61,10 @@ function getStatusVisual(status: string): { label: string; className: string } {
 export function DonationHistory({ items, isLoading, errorMessage }: DonationHistoryProps) {
 	return (
 		<section className="space-y-4">
-			<h3 className="headline-font text-2xl font-extrabold">Historico de Doacoes</h3>
+			<h3 className="headline-font text-2xl font-extrabold">Histórico de Doações</h3>
 
 			{isLoading && (
-				<div className="rounded-[2rem] bg-[#f3f3f5] px-6 py-8 text-sm text-gray-600">Carregando historico de doacoes...</div>
+				<div className="rounded-[2rem] bg-[#f3f3f5] px-6 py-8 text-sm text-gray-600">Carregando histórico de doações...</div>
 			)}
 
 			{!isLoading && errorMessage && (
@@ -72,7 +72,7 @@ export function DonationHistory({ items, isLoading, errorMessage }: DonationHist
 			)}
 
 			{!isLoading && !errorMessage && items.length === 0 && (
-				<div className="rounded-[2rem] bg-[#f3f3f5] px-6 py-8 text-sm text-gray-600">Nenhuma doacao registrada para este doador.</div>
+				<div className="rounded-[2rem] bg-[#f3f3f5] px-6 py-8 text-sm text-gray-600">Nenhuma doação registrada para este doador.</div>
 			)}
 
 			{!isLoading && !errorMessage && items.length > 0 && (
@@ -95,7 +95,7 @@ export function DonationHistory({ items, isLoading, errorMessage }: DonationHist
 									</span>
 								</div>
 
-								<div className="text-xs text-gray-500 uppercase tracking-widest">Data da doacao</div>
+								<div className="text-xs text-gray-500 uppercase tracking-widest">Data da doação</div>
 								<div className="text-sm text-gray-700">{formatDate(item.donationDate)}</div>
 							</article>
 						);

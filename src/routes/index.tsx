@@ -4,6 +4,8 @@ import LoginPage from "../pages/LoginPage";
 import RequestsPage from "../pages/RequestsPage";
 import NewRequestPage from "../pages/NewRequestPage";
 import RegisterPage from "../pages/RegisterPage";
+import RecommendationsPage from "../pages/RecommendationsPage";
+import ExternalDonationPage from "../pages/ExternalDonationPage";
 import { PublicOnlyRoute, RequireAuth, RoleBasedHomeRedirect } from "./RouteGuards";
 
 export const router = createBrowserRouter([
@@ -36,6 +38,22 @@ export const router = createBrowserRouter([
     element: (
       <RequireAuth>
         <DonorDashboardPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: "/dashboard/recommendations",
+    element: (
+      <RequireAuth>
+        <RecommendationsPage />
+      </RequireAuth>
+    ),
+  },
+  {
+    path: "/donations/external/new",
+    element: (
+      <RequireAuth>
+        <ExternalDonationPage />
       </RequireAuth>
     ),
   },

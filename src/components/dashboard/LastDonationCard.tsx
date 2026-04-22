@@ -3,8 +3,9 @@ import { AppButton } from "../ui";
 type LastDonationCardProps = {
   lastDonationDate: string | null;
   lastDonationHospitalName: string | null;
-  hasCertificate: boolean;
-  reportUrl: string | null;
+  hasDonation: boolean;
+  onOpenDonationDetails: () => void;
+  onCreateExternalDonation: () => void;
 };
 
 function formatDate(input: string | null): string {
@@ -27,7 +28,9 @@ function formatDate(input: string | null): string {
 export function LastDonationCard({
   lastDonationDate,
   lastDonationHospitalName,
-  reportUrl,
+  hasDonation,
+  onOpenDonationDetails,
+  onCreateExternalDonation,
 }: LastDonationCardProps) {
   const formattedDate = formatDate(lastDonationDate);
   const locationText = lastDonationHospitalName || "hospital nao informado";
@@ -35,21 +38,19 @@ export function LastDonationCard({
   return (
     <section className="col-span-12 lg:col-span-4 rounded-[2rem] p-6 lg:p-8 text-white bg-gradient-to-br from-[#ae131a] to-[#d2312f]">
       <h3 className="headline-font text-xl font-bold mb-4">Última Doação</h3>
-      <p className="text-red-100 text-sm mb-6">Realizada em {formattedDate} no {locationText}.</p>
+      {hasDonation ? (
+        <p className="text-red-100 text-sm mb-6">Realizada em {formattedDate} no {locationText}.</p>
+      ) : (
+        <p className="text-red-100 text-sm mb-6">Nenhuma doação registrada.</p>
+      )}
 
-      
       <AppButton
         variant="light"
         fullWidth
         className="mt-8"
-        onClick={() => {
-          if (reportUrl) {
-            window.open(reportUrl, "_blank", "noopener,noreferrer");
-          }
-        }}
-        disabled={!reportUrl}
+        onClick={hasDonation ? onOpenDonationDetails : onCreateExternalDonation}
       >
-        Ver informações detalhadas
+        {hasDonation ? "Ver informações detalhadas" : "Registrar Doação Externa"}
       </AppButton>
     </section>
   );

@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { hasDonorRole, hasRequesterRole, hasAdminRole } from "../../routes/roleRouting";
 
 type DonorDashboardSidebarProps = {
   onLogout: () => void;
-  activeItem?: "donor-dashboard" | "requests" | "new-request";
+  activeItem?: "donor-dashboard" | "requests" | "new-request" | "external-donation";
 };
 
 type MenuItem = {
@@ -18,16 +19,17 @@ export function DonorDashboardSidebar({
   activeItem = "donor-dashboard",
 }: DonorDashboardSidebarProps) {
   const { roles } = useAuth();
-  const hasRequesterRole = roles.includes("REQUESTER");
-  const hasDonorRole = roles.includes("DONOR");
-  const showDonorDashboard = hasDonorRole || roles.includes("SYSTEM_ADMIN");
+  const canAccessRequesterArea = hasRequesterRole(roles);
+  const canAccessDonorDashboard = hasDonorRole(roles);
+  const canAccessAdminArea = hasAdminRole(roles);
+  const showDonorDashboard = canAccessDonorDashboard || canAccessAdminArea;
 
   const menuItems: MenuItem[] = [
     ...(showDonorDashboard
       ? ([{ key: "donor-dashboard", icon: "dashboard", label: "Dashboard de Doador", path: "/dashboard" }] as MenuItem[])
       : []),
     { key: "requests", icon: "assignment", label: "Suas Requisições", path: "/requests" },
-    ...(hasRequesterRole
+    ...(canAccessRequesterArea
       ? ([{ key: "new-request", icon: "add_circle", label: "Nova Requisição", path: "/requests/new" }] as MenuItem[])
       : []),
   ];
@@ -57,14 +59,14 @@ export function DonorDashboardSidebar({
       </nav>
 
       <div className="pt-4 border-t border-gray-200 space-y-2">
-        {hasDonorRole && (
-          <button
-            type="button"
+        {canAccessDonorDashboard && (
+          <Link
+            to="/donations/external/new"
             className="w-full bg-[#ae131a] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#ae131a]/20"
           >
             <span className="material-symbols-outlined">add</span>
             Doação Externa
-          </button>
+          </Link>
         )}
 
         <button
