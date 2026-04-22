@@ -2,6 +2,11 @@ import axios from "axios";
 import { authService } from "../services/authService";
 import { API_BASE_URL } from "../config/api";
 
+function getAppPath(pathname: string): string {
+  const basePath = import.meta.env.BASE_URL.endsWith("/") ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`;
+  return `${basePath}${pathname.replace(/^\/+/, "")}`;
+}
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -43,8 +48,10 @@ api.interceptors.response.use(
       authService.logout();
       authService.setPostLoginNotice("Sessão expirada. Faça login novamente.");
 
-      if (window.location.pathname !== "/login") {
-        window.location.replace("/login");
+      const loginPath = getAppPath("login");
+
+      if (window.location.pathname !== loginPath) {
+        window.location.replace(loginPath);
       }
     }
 

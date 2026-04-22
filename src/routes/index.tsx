@@ -7,10 +7,12 @@ import RegisterPage from "../pages/RegisterPage";
 import RecommendationsPage from "../pages/RecommendationsPage";
 import ExternalDonationPage from "../pages/ExternalDonationPage";
 import { PublicOnlyRoute, RequireAuth, RoleBasedHomeRedirect } from "./RouteGuards";
+import { RouteErrorPage } from "../components/ui/RouteErrorPage";
 
 export const router = createBrowserRouter([
   {
     path: "/",
+    errorElement: <RouteErrorPage />,
     element: (
       <RequireAuth>
         <RoleBasedHomeRedirect />
@@ -19,6 +21,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/login",
+    errorElement: <RouteErrorPage />,
     element: (
       <PublicOnlyRoute>
         <LoginPage />
@@ -27,6 +30,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/register",
+    errorElement: <RouteErrorPage />,
     element: (
       <PublicOnlyRoute>
         <RegisterPage />
@@ -35,6 +39,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
+    errorElement: <RouteErrorPage />,
     element: (
       <RequireAuth>
         <DonorDashboardPage />
@@ -43,6 +48,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/dashboard/recommendations",
+    errorElement: <RouteErrorPage />,
     element: (
       <RequireAuth>
         <RecommendationsPage />
@@ -51,6 +57,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/donations/external/new",
+    errorElement: <RouteErrorPage />,
     element: (
       <RequireAuth>
         <ExternalDonationPage />
@@ -59,6 +66,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/requests",
+    errorElement: <RouteErrorPage />,
     element: (
       <RequireAuth>
         <RequestsPage />
@@ -67,6 +75,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/requests/new",
+    errorElement: <RouteErrorPage />,
     element: (
       <RequireAuth>
         <NewRequestPage />

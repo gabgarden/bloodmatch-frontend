@@ -20,6 +20,15 @@ export default function RecommendationsPage() {
   const canAccessAdminArea = hasAdminRole(normalizedRoles);
   const isRequesterOnly = canAccessRequesterArea && !canAccessDonorDashboard && !canAccessAdminArea;
 
+  const {
+    recommendations,
+    isLoadingRecommendations,
+    feedback,
+    errorMessage,
+    donorBloodType,
+    acceptDonation,
+  } = useDonorDashboard({ partyId, hasDonorRole: canAccessDonorDashboard });
+
   if (isResolvingRoles) {
     return <FullPageLoading message="Carregando permissões..." />;
   }
@@ -37,15 +46,6 @@ export default function RecommendationsPage() {
       </main>
     );
   }
-
-  const {
-    recommendations,
-    isLoadingRecommendations,
-    feedback,
-    errorMessage,
-    donorBloodType,
-    acceptDonation,
-  } = useDonorDashboard({ partyId, hasDonorRole: canAccessDonorDashboard });
 
   return (
     <div className="min-h-screen bg-[#f9f9fb] text-[#1a1c1d]">

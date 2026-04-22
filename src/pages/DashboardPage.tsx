@@ -24,10 +24,6 @@ export default function DonorDashboardPage() {
   const canAccessAdminArea = hasAdminRole(normalizedRoles);
   const isRequesterOnly = canAccessRequesterArea && !canAccessDonorDashboard && !canAccessAdminArea;
 
-  if (isResolvingRoles) {
-    return <FullPageLoading message="Carregando permissões..." />;
-  }
-
   // Main feature state is centralized in one hook to keep page focused on layout.
   const {
     recommendations,
@@ -51,6 +47,10 @@ export default function DonorDashboardPage() {
     () => recommendations.filter((recommendation) => recommendation.urgency === "CRITICAL"),
     [recommendations],
   );
+
+  if (isResolvingRoles) {
+    return <FullPageLoading message="Carregando permissões..." />;
+  }
 
   function handleOpenDonationDetails() {
     if (!lastDonationId) {
