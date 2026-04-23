@@ -5,6 +5,7 @@ export type LoginResponse = {
   accessToken: string;
   expiresIn?: number;
   partyId: string;
+  userId?: string;
   roles: string[];
 };
 
@@ -13,6 +14,7 @@ export type AuthSession = {
   accessToken: string;
   expiresAt: number;
   partyId: string;
+  userId: string | null;
   roles: string[];
 };
 

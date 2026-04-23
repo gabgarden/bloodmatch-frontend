@@ -26,8 +26,11 @@ export default function RecommendationsPage() {
     feedback,
     errorMessage,
     donorBloodType,
+    daysRemaining,
     acceptDonation,
   } = useDonorDashboard({ partyId, hasDonorRole: canAccessDonorDashboard });
+  const waitingDays = Math.max(daysRemaining, 0);
+  const isEligibleToDonate = waitingDays <= 0;
 
   if (isResolvingRoles) {
     return <FullPageLoading message="Carregando permissões..." />;
@@ -59,27 +62,39 @@ export default function RecommendationsPage() {
 
           <section className="rounded-3xl bg-gradient-to-r from-[#fff2f0] via-[#f9f9fb] to-[#eaf3f7] p-6 lg:p-8">
             <h1 className="headline-font text-3xl font-extrabold tracking-tight text-[#1a1c1d]">Todas as Recomendações</h1>
-            <p className="mt-2 text-sm text-[#4c616c]">Requisições compatíveis com {donorBloodType} .</p>
+            {isEligibleToDonate ? (
+              <p className="mt-2 text-sm text-[#4c616c]">Requisições compatíveis com {donorBloodType} .</p>
+            ) : (
+              <p className="mt-2 text-sm text-[#4c616c]">Você não está elegível para doar. Espere {waitingDays} {waitingDays === 1 ? "dia" : "dias"}.</p>
+            )}
           </section>
 
-          {isLoadingRecommendations && <p className="text-sm text-gray-600">Carregando recomendações...</p>}
+          {isEligibleToDonate && isLoadingRecommendations && <p className="text-sm text-gray-600">Carregando recomendações...</p>}
 
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {recommendations.map((recommendation) => (
-              <RecommendationCard
-                key={recommendation.id}
-                id={recommendation.id}
-                name={recommendation.bloodCenterName}
-                bloodTypeNeeded={recommendation.bloodTypeNeeded}
-                dateLimit={recommendation.dateLimit}
-                urgency={recommendation.urgency}
-                onAccept={acceptDonation}
-              />
-            ))}
+            {isEligibleToDonate ? (
+              <>
+                {recommendations.map((recommendation) => (
+                  <RecommendationCard
+                    key={recommendation.id}
+                    id={recommendation.id}
+                    name={recommendation.bloodCenterName}
+                    bloodTypeNeeded={recommendation.bloodTypeNeeded}
+                    dateLimit={recommendation.dateLimit}
+                    urgency={recommendation.urgency}
+                    onAccept={acceptDonation}
+                  />
+                ))}
 
-            {!isLoadingRecommendations && recommendations.length === 0 && (
+                {!isLoadingRecommendations && recommendations.length === 0 && (
+                  <AppCard className="col-span-1 md:col-span-2 lg:col-span-3 p-6 text-sm text-gray-600">
+                    Nenhuma recomendação disponível no momento.
+                  </AppCard>
+                )}
+              </>
+            ) : (
               <AppCard className="col-span-1 md:col-span-2 lg:col-span-3 p-6 text-sm text-gray-600">
-                Nenhuma recomendação disponível no momento.
+                Voce nao esta elegivel para doar. Espere {waitingDays} {waitingDays === 1 ? "dia" : "dias"}.
               </AppCard>
             )}
           </section>

@@ -5,7 +5,15 @@ import type { AuthSession, LoginCredentials, LoginResponse } from "../types/auth
 const AUTH_SESSION_KEY = "bloodmatch.auth.session";
 const POST_LOGIN_NOTICE_KEY = "bloodmatch.auth.notice";
 
-function decodeJwtExp(token: string): number | null {
+type JwtPayload = {
+  exp?: number;
+  sub?: string;
+  userId?: string;
+  uid?: string;
+  user_id?: string;
+};
+
+function decodeJwtPayload(token: string): JwtPayload | null {
   try {
     const payload = token.split(".")[1];
     if (!payload) {
@@ -14,12 +22,26 @@ function decodeJwtExp(token: string): number | null {
 
     const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
     const normalized = `${base64}${"=".repeat((4 - (base64.length % 4)) % 4)}`;
-    const parsedPayload = JSON.parse(atob(normalized));
-
-    return typeof parsedPayload.exp === "number" ? parsedPayload.exp * 1000 : null;
+    return JSON.parse(atob(normalized)) as JwtPayload;
   } catch {
     return null;
   }
+}
+
+function decodeJwtExp(token: string): number | null {
+  const payload = decodeJwtPayload(token);
+  return typeof payload?.exp === "number" ? payload.exp * 1000 : null;
+}
+
+function resolveUserId(data: LoginResponse): string | null {
+  if (typeof data.userId === "string" && data.userId.trim().length > 0) {
+    return data.userId;
+  }
+
+  const payload = decodeJwtPayload(data.accessToken);
+  const candidate = payload?.userId ?? payload?.uid ?? payload?.user_id ?? payload?.sub;
+
+  return typeof candidate === "string" && candidate.trim().length > 0 ? candidate : null;
 }
 
 function buildSession(data: LoginResponse): AuthSession {
@@ -32,6 +54,7 @@ function buildSession(data: LoginResponse): AuthSession {
     accessToken: data.accessToken,
     expiresAt: expFromToken ?? expFromApi ?? now + 60 * 60 * 1000,
     partyId: data.partyId,
+    userId: resolveUserId(data),
     roles: Array.isArray(data.roles) ? data.roles : [],
   };
 }
@@ -116,6 +139,14 @@ export const authService = {
     }
 
     return readSession()?.partyId ?? null;
+  },
+
+  getUserId(): string | null {
+    if (!this.isAuthenticated()) {
+      return null;
+    }
+
+    return readSession()?.userId ?? null;
   },
 
   consumePostLoginNotice(): string | null {

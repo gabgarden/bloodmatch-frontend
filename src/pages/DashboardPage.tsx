@@ -47,6 +47,8 @@ export default function DonorDashboardPage() {
     () => recommendations.filter((recommendation) => recommendation.urgency === "CRITICAL"),
     [recommendations],
   );
+  const waitingDays = Math.max(daysRemaining, 0);
+  const isEligibleToDonate = waitingDays <= 0;
 
   if (isResolvingRoles) {
     return <FullPageLoading message="Carregando permissões..." />;
@@ -102,32 +104,42 @@ export default function DonorDashboardPage() {
                 <div className="flex items-end justify-between">
                   <div>
                     <h2 className="headline-font text-2xl font-extrabold tracking-tight">Recomendações Urgentes</h2>
-                    <p className="text-sm text-gray-600">Requisições compatíveis com {donorBloodType}</p>
+                    {isEligibleToDonate && <p className="text-sm text-gray-600">Requisições compatíveis com {donorBloodType}</p>}
                   </div>
-                  <Link to="/dashboard/recommendations" className="text-[#ae131a] font-bold flex items-center gap-1 hover:underline">
-                    Ver todas <span className="material-symbols-outlined">chevron_right</span>
-                  </Link>
+                  {isEligibleToDonate && (
+                    <Link to="/dashboard/recommendations" className="text-[#ae131a] font-bold flex items-center gap-1 hover:underline">
+                      Ver todas <span className="material-symbols-outlined">chevron_right</span>
+                    </Link>
+                  )}
                 </div>
 
-                {isLoadingRecommendations && <p className="text-sm text-gray-600">Carregando recomendações...</p>}
+                {isEligibleToDonate && isLoadingRecommendations && <p className="text-sm text-gray-600">Carregando recomendações...</p>}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {urgentRecommendations.map((recommendation) => (
-                    <RecommendationCard
-                      key={recommendation.id}
-                      id={recommendation.id}
-                      name={recommendation.bloodCenterName}
-                      bloodTypeNeeded={recommendation.bloodTypeNeeded}
-                      dateLimit={recommendation.dateLimit}
-                      urgency={recommendation.urgency}
-                      onAccept={acceptDonation}
-                    />
-                  ))}
+                  {isEligibleToDonate ? (
+                    <>
+                      {urgentRecommendations.map((recommendation) => (
+                        <RecommendationCard
+                          key={recommendation.id}
+                          id={recommendation.id}
+                          name={recommendation.bloodCenterName}
+                          bloodTypeNeeded={recommendation.bloodTypeNeeded}
+                          dateLimit={recommendation.dateLimit}
+                          urgency={recommendation.urgency}
+                          onAccept={acceptDonation}
+                        />
+                      ))}
 
-                  {!isLoadingRecommendations && urgentRecommendations.length === 0 && (
-                    <div className="rounded-[2rem] bg-[#f3f3f5] p-6 text-sm text-gray-600 col-span-1 md:col-span-2 lg:col-span-3">
-                      Nenhuma recomendação urgente disponível no momento.
-                    </div>
+                      {!isLoadingRecommendations && urgentRecommendations.length === 0 && (
+                        <div className="rounded-[2rem] bg-[#f3f3f5] p-6 text-sm text-gray-600 col-span-1 md:col-span-2 lg:col-span-3">
+                          Nenhuma recomendação urgente disponível no momento.
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <AppCard className="col-span-1 md:col-span-2 lg:col-span-3 p-6 text-sm text-gray-600">
+                      Você não está elegível para doar. Espere {waitingDays} {waitingDays === 1 ? "dia" : "dias"}.
+                    </AppCard>
                   )}
                 </div>
 

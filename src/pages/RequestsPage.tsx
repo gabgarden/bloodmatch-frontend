@@ -1,84 +1,54 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { isAxiosError } from "axios";
 import { DonorDashboardSidebar } from "../components/dashboard/DashboardSidebar";
 import { DonorDashboardTopbar } from "../components/dashboard/DashboardTopbar";
-import { AppButton, AppCard, FullPageLoading } from "../components/ui";
+import { AppButton, AppCard, FullPageLoading, InlineAlert } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import { AccessDenied } from "../components/AccessDenied";
 import { useRoleResolution } from "../hooks/useRoleResolution";
 import { hasAdminRole, hasRequesterRole } from "../routes/roleRouting";
+import { fetchUserDonationRequests, type UserDonationRequestCard } from "../services/donationService";
 
-type RequestUrgency = "Crítica" | "Média" | "Baixa";
+type RequestUrgency = UserDonationRequestCard["urgency"];
 
-type RequestCard = {
-  id: string;
-  bloodType: string;
-  hospital: string;
-  location: string;
-  distanceKm: number;
-  urgency: RequestUrgency;
-  collected: number;
-  target: number;
-  deadline: string;
-};
+function extractRequestLoadErrorMessage(error: unknown): string {
+  if (!isAxiosError(error)) {
+    return "Não foi possível carregar suas requisições agora.";
+  }
 
-const requestCards: RequestCard[] = [
-  {
-    id: "REQ-4029",
-    bloodType: "O-",
-    hospital: "Hospital Central de Emergência",
-    location: "Centro, São Paulo",
-    distanceKm: 2.4,
-    urgency: "Crítica",
-    collected: 12,
-    target: 20,
-    deadline: "Hoje, 18:00",
-  },
-  {
-    id: "REQ-3981",
-    bloodType: "A+",
-    hospital: "Instituto de Cardiologia",
-    location: "Jardins, São Paulo",
-    distanceKm: 5.1,
-    urgency: "Média",
-    collected: 8,
-    target: 10,
-    deadline: "Amanhã, 12:00",
-  },
-  {
-    id: "REQ-4011",
-    bloodType: "AB-",
-    hospital: "Hemocentro São Lucas",
-    location: "Pinheiros, São Paulo",
-    distanceKm: 1.8,
-    urgency: "Baixa",
-    collected: 2,
-    target: 15,
-    deadline: "24 Abr, 17:00",
-  },
-  {
-    id: "REQ-4055",
-    bloodType: "B+",
-    hospital: "Maternidade Vida Nova",
-    location: "Ibirapuera, São Paulo",
-    distanceKm: 8,
-    urgency: "Crítica",
-    collected: 1,
-    target: 5,
-    deadline: "Hoje, 22:00",
-  },
-  {
-    id: "REQ-4062",
-    bloodType: "O+",
-    hospital: "Clínica Santa Maria",
-    location: "Brooklin, São Paulo",
-    distanceKm: 12.5,
-    urgency: "Média",
-    collected: 30,
-    target: 50,
-    deadline: "25 Abr, 08:00",
-  },
-];
+  if (!error.response) {
+    return "Falha de conexão ao carregar suas requisições. Verifique CORS e disponibilidade da API.";
+  }
+
+  const data = error.response.data;
+  const apiMessage =
+    (typeof data?.error === "string" && data.error.trim().length > 0 && data.error) ||
+    (typeof data?.message === "string" && data.message.trim().length > 0 && data.message) ||
+    null;
+
+  if (apiMessage) {
+    return apiMessage;
+  }
+
+  if (error.response.status === 401) {
+    return "Sem autorização para listar requisições. Verifique se o token está válido.";
+  }
+
+  if (error.response.status === 403) {
+    return "Seu perfil não possui permissão para listar requisições.";
+  }
+
+  if (error.response.status === 404) {
+    return "Endpoint de requisições por usuário não encontrado no backend.";
+  }
+
+  if (error.response.status === 400) {
+    return "Requisição inválida ao listar suas requisições.";
+  }
+
+  return `Erro ${error.response.status} ao carregar suas requisições.`;
+}
 
 function urgencyStyle(urgency: RequestUrgency) {
   if (urgency === "Crítica") {
@@ -108,13 +78,59 @@ function urgencyStyle(urgency: RequestUrgency) {
 }
 
 export default function RequestsPage() {
-  const { roles, logout } = useAuth();
+  const { roles, partyId, userId, logout } = useAuth();
   const [selectedBloodType, setSelectedBloodType] = useState("Todos");
+  const [requestCards, setRequestCards] = useState<UserDonationRequestCard[]>([]);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
 
   const normalizedRoles = useMemo(() => roles, [roles]);
   const isResolvingRoles = useRoleResolution(normalizedRoles);
   const canAccessRequesterArea = hasRequesterRole(normalizedRoles);
   const canAccessAdminArea = hasAdminRole(normalizedRoles);
+
+  useEffect(() => {
+    if ((!partyId && !userId) || (!canAccessRequesterArea && !canAccessAdminArea)) {
+      setRequestCards([]);
+      return;
+    }
+
+    const currentPartyId = partyId;
+    const currentUserId = userId;
+
+    let isCancelled = false;
+
+    async function loadRequests() {
+      setIsLoadingRequests(true);
+      setRequestsError(null);
+
+      try {
+        const items = await fetchUserDonationRequests({
+          partyId: currentPartyId,
+          userId: currentUserId,
+        });
+
+        if (!isCancelled) {
+          setRequestCards(items);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          setRequestsError(extractRequestLoadErrorMessage(error));
+          setRequestCards([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingRequests(false);
+        }
+      }
+    }
+
+    loadRequests();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [partyId, userId, canAccessRequesterArea, canAccessAdminArea]);
 
   if (isResolvingRoles) {
     return <FullPageLoading message="Carregando permissões..." />;
@@ -130,7 +146,17 @@ export default function RequestsPage() {
     );
   }
 
-  const availableBloodTypes = ["Todos", "A+", "O-", "B+", "AB-", "O+"];
+  const availableBloodTypes = useMemo(() => {
+    const dynamicTypes = Array.from(
+      new Set(
+        requestCards
+          .map((request) => request.bloodType)
+          .filter((bloodType) => bloodType && bloodType !== "-"),
+      ),
+    ).sort();
+
+    return ["Todos", ...dynamicTypes];
+  }, [requestCards]);
 
   const filteredRequests =
     selectedBloodType === "Todos"
@@ -179,6 +205,18 @@ export default function RequestsPage() {
           </section>
 
           <section className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {isLoadingRequests && (
+              <AppCard className="p-6 text-sm text-gray-600 md:col-span-2 xl:col-span-3">
+                Carregando requisições...
+              </AppCard>
+            )}
+
+            {requestsError && (
+              <div className="md:col-span-2 xl:col-span-3">
+                <InlineAlert tone="error" message={requestsError} />
+              </div>
+            )}
+
             {filteredRequests.map((request) => {
               const style = urgencyStyle(request.urgency);
               const progress = Math.min(100, Math.round((request.collected / request.target) * 100));
@@ -232,9 +270,9 @@ export default function RequestsPage() {
             })}
           </section>
 
-          {filteredRequests.length === 0 && (
+          {!isLoadingRequests && !requestsError && filteredRequests.length === 0 && (
             <AppCard className="p-6 text-sm text-gray-600">
-              Nenhuma requisição encontrada para o tipo sanguíneo selecionado.
+              Nenhuma requisição encontrada.
             </AppCard>
           )}
         </div>

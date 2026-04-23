@@ -9,6 +9,7 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   roles: string[];
   partyId: string | null;
+  userId: string | null;
   login: (credentials: LoginCredentials) => Promise<AuthSession>;
   logout: () => void;
 };
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: !!session && authService.isAuthenticated(),
       roles: session?.roles ?? [],
       partyId: session?.partyId ?? null,
+      userId: session?.userId ?? null,
       login,
       logout,
     };
